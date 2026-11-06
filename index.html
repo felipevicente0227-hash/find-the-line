@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en" data-floor="black">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find the Line · Felipe Vicente</title>
+<meta name="description" content="Felipe Vicente's portfolio: line tracing robots, Highlit, and research on the fruit fly brain.">
+<meta name="robots" content="noindex">
+<meta name="description" content="Robots that won first place in three countries, a recruiting app for student-athletes, a football model tested against the bookmakers. Each one says what failed.">
+<style>
+  /* ---------- two floors: BLACK (on the line) and WHITE ---------- */
+  :root{
+    color-scheme:dark;
+    --ink:#f2f4f6; --muted:#9aa4ae; --bg:#0b0d10; --panel:#14181d; --line:#2a3139; --rail:#f2f4f6;
+    --accent:#c8f542; --accent-ink:#0b0d10; --warn:#ffd47a; --warn-bg:#2a2410;
+    --mono:"JetBrains Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+    --sans:"Space Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --display:"Archivo Black","Space Grotesk",Impact,sans-serif;
+  }
+  @font-face{font-family:"Archivo Black";src:url(fonts/ArchivoBlack-400.woff2) format("woff2");font-weight:400;font-display:swap}
+  @font-face{font-family:"Space Grotesk";src:url(fonts/SpaceGrotesk-500.woff2) format("woff2");font-weight:500;font-display:swap}
+  @font-face{font-family:"Space Grotesk";src:url(fonts/SpaceGrotesk-700.woff2) format("woff2");font-weight:700;font-display:swap}
+  @font-face{font-family:"JetBrains Mono";src:url(fonts/JetBrainsMono-400.woff2) format("woff2");font-weight:400;font-display:swap}
+  [data-floor="white"]{
+    color-scheme:light;
+    --ink:#15181b; --muted:#5b6670; --bg:#fbfbf9; --panel:#f1f2ee; --line:#dfe2dd; --rail:#15181b;
+    --accent:#0b6e4f; --accent-ink:#ffffff; --warn:#7a5200; --warn-bg:#fff4d6;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.55 var(--sans);transition:background .4s,color .4s}
+  a{color:var(--accent)}
+  main{max-width:760px;margin:0 auto;padding-block:0 80px;padding-left:max(64px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));position:relative}
+  @media(min-width:700px){main{padding-left:max(96px,env(safe-area-inset-left,0px))}}
+  h1{font-family:var(--display);font-size:clamp(2.6rem,9vw,4.6rem);line-height:.95;margin:18px 0 12px;letter-spacing:-.02em;text-transform:uppercase}
+  h1 .w{display:inline-block;opacity:0;transform:translateY(.35em) scaleY(.6);transform-origin:bottom}
+  h1.on .w{animation:slam .42s cubic-bezier(.16,1,.3,1) forwards}
+  h1 .w:nth-child(2){animation-delay:.12s}h1 .w:nth-child(3){animation-delay:.24s}h1 .w:nth-child(4){animation-delay:.36s}
+  @keyframes slam{to{opacity:1;transform:none}}
+  h1 .acc{color:var(--accent)}
+  h2{font-family:var(--display);font-size:clamp(1.6rem,5vw,2.4rem);line-height:1;margin:0 0 12px;text-transform:uppercase;letter-spacing:-.01em}
+  .station.lost h2{color:var(--muted)}
+  .station.lost{min-height:38vh}
+  .station.found h2{color:var(--accent)}
+  h3{font-size:1.1rem;margin:0 0 6px}
+  p{margin:0 0 14px}
+  .muted{color:var(--muted)}
+  .mono{font-family:var(--mono)}
+  .todo{background:var(--warn-bg);border:1px dashed var(--warn);color:var(--warn);padding:6px 10px;border-radius:8px;font-size:.9rem;display:inline-block;margin:4px 0}
+
+  /* ---------- the line (rail) and the robot ---------- */
+  .station{position:relative;padding:28px 0 28px 0}
+  .station::before{content:"";position:absolute;left:-40px;top:0;bottom:0;width:3px;background:var(--rail);transform:scaleY(0);transform-origin:top;transition:transform 1.1s cubic-bezier(.2,.7,.2,1)}
+  @media(min-width:700px){.station::before{left:-56px}}
+  .station.on::before{transform:scaleY(1)}
+  .station.lost::before{background:repeating-linear-gradient(to bottom,var(--rail) 0 10px,transparent 10px 26px);opacity:.55}
+  /* from Taiwan on, the line is a road: two edges */
+  .station.road::before{width:9px;left:-43px;background:linear-gradient(to right,var(--rail) 0 3px,transparent 3px 6px,var(--rail) 6px 9px)}
+  @media(min-width:700px){.station.road::before{left:-59px}}
+  .station .dot{position:absolute;left:-47px;top:34px;width:17px;height:17px;border-radius:50%;background:var(--bg);border:3px solid var(--rail)}
+  @media(min-width:700px){.station .dot{left:-63px}}
+  .station.found .dot{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 6px color-mix(in srgb,var(--accent) 25%,transparent)}
+  .station .when{font-family:var(--mono);font-size:.85rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px}
+
+  #robot{position:fixed;left:calc(-2px + env(safe-area-inset-left,0px));top:calc(45vh - 59px);width:56px;height:118px;z-index:5;transition:transform .5s;pointer-events:none}
+  @media(min-width:700px){#robot{left:calc(50% - 376px);top:calc(45vh - 76px);width:72px;height:152px}}
+  #robot canvas,#robot img{filter:drop-shadow(0 0 3px rgba(198,255,61,.35)) drop-shadow(0 2px 3px rgba(0,0,0,.5))}
+  [data-floor="white"] #robot canvas,[data-floor="white"] #robot img{filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))}
+  #robot .eye{fill:var(--accent)}
+  #robot .body{fill:var(--panel);stroke:var(--rail);stroke-width:2}
+  #robot .wheel{fill:var(--rail)}
+  #robot.searching #robotImg{animation:spin 1.6s linear infinite}
+  #robotImg{transition:transform .45s ease}
+  #robot.up #robotImg{transform:rotate(0deg)!important}
+  #robot.found{transform:scale(1.12)}
+  #robot.found::after{content:"";position:absolute;left:50%;top:50%;width:96px;height:96px;margin:-48px 0 0 -48px;border-radius:50%;border:2px solid var(--accent);opacity:.9;animation:ring .9s ease-out forwards}
+  @keyframes ring{to{transform:scale(1.6);opacity:0}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ---------- hero: the serial monitor ---------- */
+  .hero{padding:36px 0 10px;position:relative}
+  .hero::before{content:"";position:absolute;left:-40px;top:0;bottom:-30px;width:3px;background:var(--rail)}
+  @media(min-width:700px){.hero::before{left:-56px}}
+  .monitor{font-family:var(--mono);font-size:.95rem;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-height:118px;white-space:pre-wrap;margin:0 0 22px}
+  .monitor .c{display:inline-block;width:.6em;height:1.05em;background:var(--accent);vertical-align:-.15em;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .monitor .k{color:var(--accent)}
+  .lede{font-size:1.3rem;line-height:1.4;margin:0 0 8px}
+  .sub{color:var(--muted);margin-bottom:20px}
+  .threshold{display:grid;grid-template-columns:1fr;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:0 0 22px}
+  .threshold label{font-family:var(--mono);font-size:.9rem}
+  .threshold input{width:100%;accent-color:var(--accent)}
+  .threshold .state{font-family:var(--mono);font-size:.9rem}
+  .threshold .state b{color:var(--accent)}
+  .numbers{display:grid;grid-template-columns:1fr;gap:10px;margin:0 0 20px}
+  @media(min-width:560px){.numbers{grid-template-columns:repeat(3,1fr)}}
+  .num{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .num b{display:block;font-size:2rem;line-height:1.1;color:var(--accent);font-family:var(--display)}
+  .num span{display:block;font-size:.92rem;color:var(--muted);margin-top:4px}
+  .buttons{display:flex;flex-wrap:wrap;gap:10px;margin:4px 0 8px}
+  .btn{display:inline-block;padding:10px 16px;border-radius:8px;border:1px solid var(--accent);text-decoration:none;font-weight:600;color:var(--accent)}
+  .btn svg{width:18px;height:18px;vertical-align:-4px;margin-right:8px}
+  .btn.primary{background:var(--accent);color:var(--accent-ink)}
+
+  /* ---------- cards and reveals ---------- */
+  .reveal{opacity:0;transform:translateY(14px);transition:opacity .6s,transform .6s}
+  .reveal.on{opacity:1;transform:none}
+  .card{border:1px solid var(--line);border-radius:12px;padding:18px 18px 10px;margin:14px 0;background:var(--panel)}
+  .card .kicker{font-family:var(--mono);font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px}
+  .card .one{font-size:1.12rem;line-height:1.4;margin:0 0 12px}
+  .card figure{margin:0 0 12px}
+  .card img,.card video{width:100%;max-width:100%;height:auto;border-radius:8px;border:1px solid var(--line);display:block;background:#000}
+  .card figure,.tile figure{max-width:100%;overflow:hidden}
+  .card figcaption{font-size:.88rem;color:var(--muted);margin-top:6px}
+  .clip{margin:0 0 16px}
+  .clip video,.clip img{width:100%;height:auto;border-radius:10px;border:1px solid var(--line);display:block;background:var(--panel)}
+  .clip figcaption{font-size:.88rem;color:var(--muted);margin-top:6px}
+  .yt{position:relative;padding-top:56.25%;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--panel)}
+  .yt iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .facts{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px;padding:0;list-style:none}
+  .points{margin:0 0 12px;padding-left:1.2em}
+  .points li{margin:0 0 6px;max-width:68ch}
+  .tools{font-family:var(--mono);font-size:.85rem;color:var(--muted);margin:0 0 14px}
+  .facts li{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:4px 11px;font-size:.9rem;font-family:var(--mono)}
+  details{margin:4px 0 10px}
+  summary{cursor:pointer;font-weight:600;color:var(--accent);padding:6px 0}
+  details ul{margin:6px 0 10px;padding-left:22px}
+  details li{margin:4px 0}
+  .role{border-left:3px solid var(--accent);padding:8px 12px;margin:10px 0;color:var(--ink)}
+  .tiles{display:grid;grid-template-columns:1fr;gap:12px;margin:12px 0}
+  @media(min-width:560px){.tiles{grid-template-columns:1fr 1fr}}
+  .tile{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--panel)}
+  .tile h3{font-size:1rem;margin-bottom:4px}
+  .tile p{font-size:.95rem;margin:0 0 6px}
+  .tile .clip{margin:8px 0 0}
+  .status{display:inline-block;font-family:var(--mono);font-size:.75rem;padding:2px 8px;border-radius:999px;background:var(--bg);border:1px solid var(--line);color:var(--muted);margin-bottom:6px}
+  .shelf{padding-left:0;list-style:none}
+  .shelf li{padding:8px 0;border-bottom:1px solid var(--line);font-size:.96rem}
+  .shelf li:last-child{border-bottom:0}
+  pre{background:#0f172a;color:#e2e8f0;padding:14px;border-radius:8px;overflow:auto;font-size:.86rem;line-height:1.45}
+  .essay p{max-width:62ch}
+  blockquote{margin:0;padding:4px 0 4px 16px;border-left:3px solid var(--accent);font-size:1.15rem;line-height:1.5}
+  footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:.9rem;color:var(--muted)}
+  .skip{position:absolute;left:-999px}
+  .skip:focus{left:20px;top:8px;background:var(--accent);color:var(--accent-ink);padding:6px 10px;border-radius:6px}
+
+  @media(prefers-reduced-motion:reduce){
+    .reveal{opacity:1;transform:none;transition:none}
+    .station::before{transform:none;transition:none}
+    #robot.searching{animation:none}
+    .monitor .c{animation:none}
+    html{scroll-behavior:auto}
+  }
+  @media print{#robot,.buttons,.todo,.threshold{display:none} .reveal{opacity:1;transform:none} .station::before{transform:none} body{font-size:12pt}}
+</style>
+</head>
+<body>
+<a class="skip" href="#start">Skip to content</a>
+
+<!-- the robot: a fixed marker that rides the line while the page scrolls under it -->
+<div id="robot" aria-hidden="true">
+  <img id="robotImg" src="img/robot-marker.png" alt="" width="196" height="414" style="display:block;width:100%;height:auto;transform:rotate(180deg)">
+  <canvas id="robotGL" style="display:none;width:100%;height:100%"></canvas>
+</div>
+
+<main id="start">
+
+<!-- ============ HERO: the serial monitor ============ -->
+<section class="hero">
+  <div class="monitor" id="monitor" aria-label="Sensor readout"><span class="k">&gt;</span> IR photoreflector: reading the floor…
+<span class="c"></span></div>
+
+  <div class="mono muted" style="font-size:.9rem;letter-spacing:.06em;text-transform:uppercase">Felipe Vicente · Madrid</div>
+  <h1 id="h1" aria-label="Find the line"><span class="w">Find</span> <span class="w">the</span> <span class="w acc">line.</span></h1>
+  <p class="lede">I build the things I can't stop thinking about, and I test them until they tell me the truth.</p>
+  <p class="sub">Senior @ Aquinas American School · founder of Highlit · research intern on self‑driving‑car perception, Taiwan, summer 2026 · president of my school's Robotics STEM Club and Asian Culture Club</p>
+
+  <div class="numbers">
+    <div class="num reveal"><b data-count="3" data-suffix="×">3×</b><span>first place in robotics competitions: Japan 2020, Korea 2021, Australia 2023</span></div>
+    <div class="num reveal"><b>Highlit</b><span>Where I'm taking it: a LinkedIn for sports recruiting. A profile with your highlights that a coach can just open, on top of the automated outreach and planning it does today. Recruiting is going personal and direct; I want it to be the tool every athlete uses for that.</span></div>
+    <div class="num reveal"><b>Liquid fly</b><span>Beyond research: liquid neurons in a real fly brain, and no programmed behaviour. We set the world and the test; the brain adapts and evolves on its own. Then measure the physical changes, copy them into other flies, and move on to other animals. Three of five steps done.</span></div>
+  </div>
+
+  <div class="threshold">
+    <label for="thr">Threshold: the one number a line tracing robot knows. Above it the floor is white, below it black. Drag it and this page reads BLACK or WHITE the same way.</label>
+    <input id="thr" type="range" min="0" max="1023" value="500" aria-describedby="thrState">
+    <div class="state" id="thrState">floor reads <b>412</b> · threshold <b>500</b> → <b>BLACK</b> · on the line</div>
+  </div>
+
+  <div class="buttons">
+    <a class="btn primary" href="https://github.com/felipevicente0227-hash">Code on GitHub</a>
+    <a class="btn" href="#contact">Email me</a>
+  </div>
+</section>
+
+<!-- ============ THE COURSE: stations on the line ============ -->
+<section class="station" id="taipei">
+  <span class="dot"></span>
+  <div class="when">Taipei · 2017</div>
+  <h2>The line</h2>
+  <p>My first line tracing robot. One infrared sensor reads how much light bounces back from the floor; one threshold decides black or white. Every robot on this page starts from that number.</p>
+</section>
+
+<section class="station" id="osaka">
+  <span class="dot"></span>
+  <div class="when">URC 2019 · slingshot robot · the final</div>
+  <h2>The root of it all</h2>
+  <p>Elementary division. The robot traced a line to a mark and fired at a target. This is the final.</p>
+  <figure class="clip"><video src="img/slingshot-2019.mp4" poster="img/slingshot-2019-poster.jpg" controls playsinline preload="metadata" aria-label="The 2019 sling-shot competition final: the robot on the table, the shot, and me watching it miss" muted></video><figcaption>2019, the final. The shot missed, and it has stayed with me ever since.</figcaption></figure>
+</section>
+
+<section class="station found" id="wins">
+  <span class="dot"></span>
+  <div class="when">Japan 2020 · Korea 2021 · Australia 2023 · three first places</div>
+  <h2>Search until you find <span style="color:var(--accent)">black</span> again</h2>
+  <p>Korea 2021, RoboSTEAM, first place. The robot lost the line at the first intersection, ran its search routine, found the line again and finished the map on its own.</p>
+  <figure class="clip"><video src="img/korea-run.mp4" poster="img/korea-run-poster.jpg" muted controls playsinline preload="metadata" aria-label="The Korea 2021 robot: the first prototype on the map, the final build, and the run"></video><figcaption>Korea 2021: the first prototype, the final build, and the run on the map.</figcaption></figure>
+  <!-- SLOT:robotics START -->
+  <div class="card reveal" id="robotics">
+    <div class="kicker">Robotics · 2017 to today</div>
+    <h3>Building, and teaching others to build</h3>
+    <p class="one">Three competition robots that won first place in Japan, Korea and Australia. Now I run my school's Robotics STEM Club to inspire the next cohort: to pass down what I know, so they build the habit of leaving the robotics environment better than they found it, and go on to do greater things.</p>
+    <figure><img src="img/robot-australia-2023-crop.jpg" alt="Two block-built robots with red gear wheels on a workbench, loose blocks and wires around them, hands at work" loading="lazy" width="514" height="442"><figcaption>Australia 2023: the crank‑system robot on the bench, rebuilt with a teammate.</figcaption></figure>
+    <ul class="facts"><li>2026 ESP32 hovercraft</li></ul>
+    <div class="role">Now the founder and teacher of my school's Robotics STEM Club: five students, once a week, two hours.</div>
+    <p><a href="https://github.com/felipevicente0227-hash/felipe-robotics-archive">Photos, code, data and videos →</a></p>
+  </div>
+  <!-- SLOT:robotics END -->
+</section>
+
+<section class="station found" id="flame">
+  <span class="dot"></span>
+  <div class="when">2023 · Flame Guardian</div>
+  <h2>Fire defender</h2>
+  <p>A robot that watches for wildfire and raises the alarm, built for the 2023 season and shown on a diorama. From 1:23 to 1:52 of the competition video.</p>
+  <figure class="clip">
+    <!-- YT:START --><div class="yt"><iframe src="https://www.youtube.com/embed/Y2XW8qYtMfY?start=83&amp;end=112&amp;rel=0" title="Flame Guardian: Fight the Climates, 2023" loading="lazy" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe></div><!-- YT:END -->
+    <figcaption><a href="https://www.youtube.com/watch?v=Y2XW8qYtMfY">Watch the full video on YouTube →</a> &nbsp;·&nbsp; <a href="https://github.com/felipevicente0227-hash/felipe-robotics-archive">Robotics archive on GitHub →</a></figcaption>
+  </figure>
+</section>
+
+<section class="station lost" id="madrid">
+  <span class="dot"></span>
+  <div class="when">Madrid · 2024 to 2025 · no robotics</div>
+  <h2>Line lost</h2>
+</section>
+
+<section class="station found" id="photogate">
+  <span class="dot"></span>
+  <div class="when">Madrid · 2026 · black again</div>
+  <h2>Black again</h2>
+  <p>2026, physics lab: a homemade Arduino photogate for free fall. Measured g = 9.14 ± 0.16 m/s². The first answer was 8.46, and the error was in my own code: one button press started the timer and released the servo.</p>
+  <figure class="clip"><video src="img/photogate.mp4" poster="img/photogate-poster.jpg" controls playsinline preload="metadata" aria-label="The photogate experiment: the cardboard rig, the sensor, and the Arduino serial monitor printing a time and a light reading per line" muted></video><figcaption>The rig, the drop, and the serial monitor.</figcaption></figure>
+  <p><a class="btn" href="https://github.com/felipevicente0227-hash/felipe-robotics-archive/tree/main/photogate-free-fall">Data, images and code on GitHub →</a></p>
+</section>
+
+<!-- ============ THE ROAD: hardware to software ============ -->
+<section class="station found road" id="taiwan">
+  <span class="dot"></span>
+  <div class="when">Taiwan · August 2026 · the road</div>
+  <h2>The road</h2>
+  <p>A self‑driving car is a line tracing robot with better eyes. In August 2026 I spent three weeks in Taiwan as a research intern on a self‑driving‑car project. I was the researcher who designed the prediction stack of its detection system.</p>
+  <figure class="clip"><img src="img/taiwan-junction.jpg" alt="The prediction stack running on a simulated Taiwan junction: car paths with probabilities, one car's move linked to another's, scooters predicted as an occupancy field, and the planned path for the self-driving car" loading="lazy" width="1400" height="900"><figcaption>The prediction stack I designed, on a simulated Taiwan junction: car paths, how one car's move affects another, scooters as a field of occupied space, and the car's planned path.</figcaption></figure>
+  <figure class="clip"><img src="img/taiwan-finding.jpg" alt="Same street seen two ways: tracking each object breaks in scooter traffic; predicting occupied space keeps cars as paths and turns scooters into a grid of where riders will be" loading="lazy" width="1400" height="800"><figcaption>My core finding: in scooter traffic, tracking breaks before prediction does. Cars keep their predicted paths; scooters become predicted occupied space.</figcaption></figure>
+  <figure class="clip"><img src="img/taiwan-occupancy.jpg" alt="Occupancy over time: three observed frames forecast four future frames over two seconds, built from three open-source projects and plugged into the prediction stack" loading="lazy" width="1400" height="990"><figcaption>Occupancy over time: 3 observed frames forecast 4 future frames over 2 seconds.</figcaption></figure>
+</section>
+
+<!-- ============ THE COURSE CONTINUES: the two work links, then the rest, in Felipe's order ============ -->
+<section class="station road" id="link2">
+  <span class="dot"></span>
+  <h2>Highlit</h2>
+
+  <!-- SLOT:highlit START -->
+  <div class="card reveal" id="highlit">
+    <div class="kicker">Since late July 2026 · 872 commits · live pre‑release</div>
+    <p class="one">I'm a student‑athlete myself, and I was in the position where getting a college coach's attention felt impossible. So I built an app that sends emails to every college coach in the country, from the athlete's own Gmail. Watching my peers go through the same trouble, I saw a reason and a path to turn it into a business and change recruiting for athletes: I know first‑hand how much pressure and time it takes, for the athletes and for their parents.</p>
+    <figure><img src="img/highlit-find.jpg" alt="Find schools, Night theme: every men's basketball program grouped by how players get in, walk-on friendly first, no ranking by how good you are; invented athlete" loading="lazy" width="1400" height="900"><figcaption>Find schools, on an invented athlete: 962 programs never ranked by how good you are.</figcaption></figure>
+    <figure><img src="img/highlit-write.jpg" alt="The Write screen: an email to an invented college with the athlete's own line highlighted and an Approved stamp" loading="lazy" width="1400" height="651"><figcaption>Write, on invented data: the athlete's own line.</figcaption></figure>
+    <div class="role">Role: founder.</div>
+    <p><a href="https://recruiting-tool-7oef.onrender.com/">Try the live pre‑release (a free server: the first visit can take up to a minute to wake) →</a></p>
+  </div>
+  <!-- SLOT:highlit END -->
+</section>
+
+<section class="station road" id="link3">
+  <span class="dot"></span>
+  <h2><i>Drosophila</i> connectome feedback loops (Liquid technologies)</h2>
+
+  <!-- SLOT:fly START — Felipe's own text, 6 Nov 05:27 -->
+  <div class="card reveal" id="fly">
+    <div class="kicker">Since 13 Sep 2026 · in progress · in simulation</div>
+    <p class="one">On 13 September I saw a video of a simulated fruit fly playing with a Rubik's cube, and I couldn't stop reading. Scientists have mapped every one of a fruit fly's 138,639 brain cells and how they connect, so a computer can run a copy of that brain. I started training one myself, but after countless tries I was just a controller telling the fly what to do. It never got better on its own.</p>
+    <p>Then, instead of telling the fly what to do, I let evolution change it: 78 slightly different flies faced a predator over 15 generations, and the ones that did best passed on their changes.</p>
+    <p>Evolution found 12 such changes. With them, the fly started escaping the predator on its own. Part of the change also worked when I copied it into a second fly's brain.</p>
+    <figure><video src="img/fly-escape.mp4" poster="img/fly-escape-poster.jpg" muted controls playsinline preload="metadata" aria-label="Same fly, same attack, three brains: only the evolved brain gets the danger signal to its escape cell, and the fly jumps away"></video><figcaption>Same fly, same attack, three brains. Only the evolved brain gets the danger signal to its escape cell, and the fly jumps away.</figcaption></figure>
+    <figure><img src="img/fly-brain-change.jpg" alt="Left: the 12 changes evolution made. Right: copied into another fly's brain, the changes woke up its danger-detecting cells (13); the same changes on the wrong cells did nothing (0)" loading="lazy" width="1400" height="760"><figcaption>Left: the 12 changes evolution made. Right: copied into another fly's brain, the changes woke up its danger‑detecting cells.</figcaption></figure>
+    <figure><img src="img/fly-brain-map.jpg" alt="All 138,639 FlyWire neurons at their real positions, front and top view, coloured by how active each was" loading="lazy" width="1400" height="612"><figcaption>All 138,639 neurons of the fly brain at their real positions, coloured by how active each one was, in simulation.</figcaption></figure>
+    <div class="role">Role: owner and research lead. I set the question and the rules and chose each experiment. Claude Code (an AI coding tool) wrote the code and ran the simulations. The brain maps, brain model and fly body are other labs' published work.</div>
+    <p><a href="https://docs.google.com/document/d/1RSZ2qxX8dqiV8U6RwRsH7sOMhblqI0EL5mOXbJkFdIY/edit?usp=sharing">Read the research paper →</a></p>
+  </div>
+  <!-- SLOT:fly END -->
+</section>
+
+<section class="station road" id="more">
+  <span class="dot"></span>
+  <div class="when">More projects</div>
+
+  <!-- SLOT:sports START -->
+  <div class="card reveal" id="sports">
+    <div class="kicker">Aug 2026 to today · forecasting live since 17 Sep 2026</div>
+    <h3>Sports prediction, all in one</h3>
+    <p class="one">After the World Cup, a guide to five prediction models hooked me, and I wanted to compete with the best: the bookmakers. They won 23 of 24 seasons. I kept the whole record anyway, fingerprinted before every kickoff, so nobody can change it afterwards.</p>
+    <figure><style>
+.fc{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:.92rem}
+.fc h4{margin:0 0 2px;font-size:1.05rem}.fc .fc-sub{color:var(--muted);font-size:.85rem;margin:0 0 8px}
+.fc-row{display:grid;grid-template-columns:1.1fr 1fr 1.1fr;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--line)}
+.fc-m span{color:var(--muted);margin:0 4px}.fc-m small{display:block;color:var(--muted);font-size:.78rem}
+.fc-bar{display:flex;height:14px;border-radius:4px;overflow:hidden;background:var(--panel)}
+.fc-bar .h{background:var(--accent)}.fc-bar .d{background:var(--line)}.fc-bar .a{background:var(--ink)}
+.fc-p{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.85rem}.fc-p span{color:var(--muted)}
+.fc-key{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:.8rem;margin-top:8px}.fc-key i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.fc-c{padding:8px 0;border-top:1px solid var(--line)}.fc-hd{display:flex;gap:10px;align-items:baseline;margin-bottom:4px}.fc-hd span{color:var(--muted);font-size:.82rem}.fc-hd em{margin-left:auto;font-style:normal;font-size:.82rem;color:var(--muted)}.fc-hd em.ok{color:var(--accent);font-weight:700}
+.fc-l{display:grid;grid-template-columns:96px 1fr 52px;gap:10px;align-items:center;padding:2px 0;font-size:.85rem}.fc-l span{color:var(--muted)}.fc-l .n{text-align:right;font-family:var(--mono);color:var(--ink)}
+.fc-b{height:11px;background:var(--panel);border-radius:3px;overflow:hidden}.fc-b i{display:block;height:100%}.fc-b .m{background:var(--accent)}.fc-b .k{background:var(--ink)}.fc-b .g{background:var(--muted)}
+@media(max-width:520px){.fc-row{grid-template-columns:1fr;gap:4px}.fc-l{grid-template-columns:80px 1fr 48px}}
+</style>
+<div class="fc" role="img" aria-label="Nations League, 12 November 2026: the chance of each result for eight matches, for example Czechia 6 percent, draw 15 percent, Spain 78 percent"><h4>Nations League, 12 Nov 2026: chance of each result</h4><p class="fc-sub">Forecast made Thu 5 Nov, a week before kickoff, and fingerprinted on the public record the same day.</p><div class="fc-row"><div class="fc-m"><b>Türkiye</b> <span>v</span> <b>Belgium</b><small>Thu 18:00</small></div><div class="fc-bar"><i class="h" style="width:24.1%"></i><i class="d" style="width:24.9%"></i><i class="a" style="width:50.9%"></i></div><div class="fc-p"><b>24%</b><span>draw 25%</span><b>51%</b></div></div><div class="fc-row"><div class="fc-m"><b>Armenia</b> <span>v</span> <b>Cyprus</b><small>Thu 18:00</small></div><div class="fc-bar"><i class="h" style="width:44.9%"></i><i class="d" style="width:27.6%"></i><i class="a" style="width:27.5%"></i></div><div class="fc-p"><b>45%</b><span>draw 28%</span><b>27%</b></div></div><div class="fc-row"><div class="fc-m"><b>Czechia</b> <span>v</span> <b>Spain</b><small>Thu 20:45</small></div><div class="fc-bar"><i class="h" style="width:6.5%"></i><i class="d" style="width:15.3%"></i><i class="a" style="width:78.2%"></i></div><div class="fc-p"><b>6%</b><span>draw 15%</span><b>78%</b></div></div><div class="fc-row"><div class="fc-m"><b>Albania</b> <span>v</span> <b>Finland</b><small>Thu 20:45</small></div><div class="fc-bar"><i class="h" style="width:44.4%"></i><i class="d" style="width:30.6%"></i><i class="a" style="width:25.0%"></i></div><div class="fc-p"><b>44%</b><span>draw 31%</span><b>25%</b></div></div><div class="fc-row"><div class="fc-m"><b>Montenegro</b> <span>v</span> <b>Latvia</b><small>Thu 20:45</small></div><div class="fc-bar"><i class="h" style="width:67.6%"></i><i class="d" style="width:21.1%"></i><i class="a" style="width:11.3%"></i></div><div class="fc-p"><b>68%</b><span>draw 21%</span><b>11%</b></div></div><div class="fc-row"><div class="fc-m"><b>San Marino</b> <span>v</span> <b>Belarus</b><small>Thu 20:45</small></div><div class="fc-bar"><i class="h" style="width:1.9%"></i><i class="d" style="width:9.8%"></i><i class="a" style="width:88.3%"></i></div><div class="fc-p"><b>2%</b><span>draw 10%</span><b>88%</b></div></div><div class="fc-row"><div class="fc-m"><b>Italy</b> <span>v</span> <b>France</b><small>Thu 20:45</small></div><div class="fc-bar"><i class="h" style="width:27.1%"></i><i class="d" style="width:27.1%"></i><i class="a" style="width:45.8%"></i></div><div class="fc-p"><b>27%</b><span>draw 27%</span><b>46%</b></div></div><div class="fc-row"><div class="fc-m"><b>England</b> <span>v</span> <b>Croatia</b><small>Thu 20:45</small></div><div class="fc-bar"><i class="h" style="width:70.7%"></i><i class="d" style="width:18.3%"></i><i class="a" style="width:11.1%"></i></div><div class="fc-p"><b>71%</b><span>draw 18%</span><b>11%</b></div></div><div class="fc-key"><span><i style="background:var(--accent)"></i>home team wins</span><span><i style="background:var(--line)"></i>draw</span><span><i style="background:var(--ink)"></i>away team wins</span><span>Chances only, never betting advice.</span></div></div>
+      <figcaption>Eight real forecasts from my model, team by team. Spain 78% means: play this match ten times, Spain wins about eight.</figcaption>
+    </figure>
+    <ul class="facts"><li>Beat a simple guess 24 of 24</li><li>Lost to the bookmakers 23 of 24</li><li>Football, NBA and NFL, live</li></ul>
+    <div class="role">Role: owner.</div>
+  </div>
+  <!-- SLOT:sports END -->
+
+  <!-- SLOT:trading START -->
+  <div class="card reveal" id="trading">
+    <div class="kicker">Since Jul 2026 · research</div>
+    <h3>Trading algorithm research (Python, QuantConnect)</h3>
+    <figure><img src="img/trading-vs-sp500.jpg" alt="Chart: $10,000 in a momentum strategy grows to $47,801 against $45,792 in the S&amp;P 500, 2010 to 2022" loading="lazy" width="1400" height="760"><figcaption>$10,000 in my momentum strategy vs the S&amp;P 500, 2010 to 2022, backtested on QuantConnect net of trading costs.</figcaption></figure>
+    <p class="one">I built a research pipeline for testing stock-trading ideas the way a quant desk does: every idea is written down and locked before any price data is read, then it has to pass a placebo test, hold up in both halves of the data, and clear a strict significance bar (t ≥ 3.3) before I'd count it as real.</p>
+    <ul class="points">
+      <li>130+ pre-registered tests.</li>
+      <li>Momentum backtest, 2010 to 2022: $10,000 became $47,801 against $45,792 for the S&amp;P 500. The edge was not significant and the worst drop was −45% against −34%, so I didn't treat it as a winner.</li>
+    </ul>
+  </div>
+  <div class="tiles">
+    <div class="tile reveal" id="jarvis"><span class="status">Working · Aug to Oct 2026</span><h3>Jarvis</h3><p>I always wanted an AI helper that automates my workflow, a Siri for my laptop. I started building it sure the bottleneck was memory and RAM. Testing said otherwise: I didn't need a more powerful local model or more memory, I needed proper memory allocation. <a href="https://github.com/felipevicente0227-hash/jarvis-public">Public copy →</a></p><figure class="clip"><img src="img/app-jarvis-1.jpg" alt="Jarvis's panel face mid-conversation: what it heard, the route it took, the receipt of what happened, and the spoken reply" loading="lazy" width="1400" height="820"><figcaption>Jarvis's panel mid‑conversation: what it heard, the route it took, the receipt, the reply.</figcaption></figure></div>
+    <div class="tile reveal" id="mailhub"><span class="status">Shipped · Sep to Oct 2026</span><h3>Mail hub</h3><p>Cold outreach was consuming the hours I wanted to spend building, so I automated it. Mail hub checks every address before sending, sends in bulk with follow‑ups, reads incoming mail, fetches and answers replies in bulk, and shows a dashboard of current emails and events.</p><figure class="clip"><img src="img/app-mailhub-1.jpg" alt="Mail hub's home dashboard on invented demo data: the Send panel, today's jobs ranked most urgent first, daily sending limits, and the address-health check" loading="lazy" width="1400" height="1330"><figcaption>Mail hub's dashboard on demo data: today's jobs, the daily sending limits, the address check.</figcaption></figure></div>
+    <div class="tile reveal" id="typer"><span class="status">Prototype · Oct to Nov 2026</span><h3>Typer</h3><p>Can typing rhythm show whether someone writes their own answer or copies one? I want an honest answer before anyone builds anti‑cheat tools on it. Typer times each key press in its own typing box, and its Simulator learns your rhythm and fakes it, to test the detector.</p><figure class="clip"><img src="img/app-typer-1.jpg" alt="Three Typer windows: the diagnostic test, the Simulator with its per-key speed keyboard, and the Detector's list of checks; invented numbers" loading="lazy" width="1400" height="711"><figcaption>Typer's three screens on invented numbers: the diagnostic test, the Simulator, the Detector.</figcaption></figure></div>
+  </div>
+  <!-- SLOT:trading END -->
+
+  <!-- SLOT:shelter START -->
+  <div class="card reveal" id="shelter">
+    <div class="kicker">Since Jan 2026 · shipped · 7 public releases</div>
+    <h3>Shelter Inventory Manager</h3>
+    <p class="one">It started in January 2026 as the internal assessment for my IB Computer Science course. I consulted a charity in Taiwan for feedback and saw it could help real food banks, charities and small businesses. So I polished it, made it free, and emailed about 3,000 charities and businesses to offer it.</p>
+    <figure><img src="img/shelter-main.png" alt="The dashboard with stock levels, items running low and a category summary, on demo data" loading="lazy"><figcaption>The dashboard a volunteer sees on opening the app.</figcaption></figure>
+    <ul class="facts"><li>21 downloads</li></ul>
+    <div class="role">Role: creator.</div>
+    <p><a href="https://felipevicente0227-hash.github.io/shelter-inventory/">Try it in your browser →</a> &nbsp;·&nbsp; <a href="https://github.com/felipevicente0227-hash/shelter-inventory">Code and releases →</a></p>
+  </div>
+  <!-- SLOT:shelter END -->
+</section>
+
+<!-- ============ HOW I BUILD ============ -->
+<section class="station road" id="how">
+  <span class="dot"></span>
+  <div class="when">How I build</div>
+  <p>On every project on this page I am the owner, and AI coding tools write most of the code. I decide what to build and what the tests must prove, and I run them. I read the code Claude writes with a tool called Vibe Wise until I understand it, then audit it for what is missing and work out the next step. I review every change and throw away what fails. Every project above has a graveyard: ideas tested and killed, with the numbers kept.</p>
+</section>
+
+
+
+<!-- ============ ABOUT ============ -->
+<section class="station road" id="about">
+  <span class="dot"></span>
+  <div class="when">About · a letter to my robot</div>
+  <div class="essay">
+    <p>You&#x27;re in pieces in Taipei. I never meant to leave you there. I&#x27;m in Madrid now. I keep going back to the run.</p>
+    <p>An IR photoreflector does one thing. It shines infrared at the floor and measures what bounces back. Black tape returns almost nothing. White floor returns a lot. Everything you knew came from that one number and the threshold I set between them.</p>
+    <p>I set my first threshold in a Taipei classroom when I was nine. I used the same method for the next seven years. Osaka, Korea, Australia. Different rooms, same approach. People assumed that was discipline. It was closer to comfort.</p>
+    <p>My father died when I was eight. I don&#x27;t have a good way to describe what that does to a kid who doesn&#x27;t have the words for it yet. I got quiet. I stopped wanting to try things. My mom, who could still see something in me, kept signing me up. Sports, painting, then a robotics camp. You were the first thing in a long time that did exactly what I told you to.</p>
+    <p>That is what I loved. Not you. The rules. A black line has an inside and an outside. There is a right answer and you can go find it.</p>
+    <p>My grandfather offered me the same thing in a different form. He built a company from nothing. After dinner, he told me how, and he always used the same phrase: Chī Kǔ. Eat bitterness. Endure. He meant stay on the line. He meant something else too. In his world, a grandfather is measured by where his grandchildren get in. My cousin got into Brown. That gets said out loud at dinner.</p>
+    <p>So I stayed on the line. I was good at it.</p>
+    <p>Osaka, 2018, elementary division. The robot before you traced a line to a marked position and fired rubber bands at a target. In trial runs I hit every shot. In the final my hands were shaking, my finger slipped, and the photoreflector ended up an inch off. One inch. The shot missed. We lost.</p>
+    <p>I replayed it for years. When it surfaced I shook my head to get rid of it. I had already learned, earlier and harder than most kids do, that one small thing going wrong can take everything with it. An inch felt like proof.</p>
+    <p>Korea, 2021. A map test run, a patient transfer robot. Your sensor read wrong at the first intersection and you lost the line.</p>
+    <p>I reached for stop. I always reach for stop. A failed run is ugly and I would rather not watch.</p>
+    <p>I didn&#x27;t stop you.</p>
+    <p>Then you spun. I wrote that months after Osaka, at ten: search until you find black again. I assumed failure was coming. I wrote it for you. I never wrote it for me.</p>
+    <p>You found the line. Lost it, spun, found it. Again. Again. You finished the map. My hand was still on the button. I still don&#x27;t know why.</p>
+    <p>I lost you in Madrid. Not you, the whole line. There was no robotics there. The robotics class was in Spanish. I stopped going. Then it was cancelled. For two years I did what I had always done with a lost line. I left it. It was easy. That&#x27;s the part I don&#x27;t like saying.</p>
+    <p>Then my physics teacher put an Arduino on the desk. “Try building your experiment with this,” he said. A photogate. Infrared, like you, except it reads what gets in the way. I was in that lab three hours a day for two months. Testing. Failing. Testing again. I had not decided to come back. I had just been searching, the way you did, until something read black.</p>
+    <p>My grandfather taught me Chī Kǔ means never leaving the line. You taught me it means finding it again. It took you microseconds. It took me two years. It was the same function.</p>
+  </div>
+</section>
+
+<!-- ============ CONTACT ============ -->
+<section class="station road" id="contact">
+  <span class="dot"></span>
+  <div class="when">Contact</div>
+  <p class="mono"><a href="mailto:felipe.vicente0227@gmail.com">felipe.vicente0227@gmail.com</a> · <a href="mailto:felipe.vicente@aasgmail.com">felipe.vicente@aasgmail.com</a> (school)</p>
+  <div class="buttons contact-btns">
+    <a class="btn" href="https://www.linkedin.com/in/felipe-vicente-wu-37ba30420/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/></svg>LinkedIn</a>
+    <a class="btn" href="https://wa.me/34665622925"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 21l1.9-5.1A8 8 0 1 1 21 12z"/></svg>WhatsApp</a>
+    <a class="btn" href="https://github.com/felipevicente0227-hash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6l-6 6 6 6M16 6l6 6-6 6"/></svg>GitHub</a>
+  </div>
+  <p class="mono">WhatsApp and Signal: +34 665 622 925 · LINE: +886 909 609 226</p>
+</section>
+
+</main>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* --- serial monitor: type the readout, then settle --- */
+  var mon = document.getElementById('monitor');
+  var lines = [
+    '> IR photoreflector: reading the floor…',
+    '> 812   WHITE',
+    '> 790   WHITE',
+    '> 034   BLACK   ← line found',
+    '> threshold = 500',
+    '> run'
+  ];
+  function render(n, partial){
+    var out = lines.slice(0,n).map(function(l){return l.replace(/^>/,'<span class="k">&gt;</span>');}).join('\n');
+    if(partial){ out += (n?'\n':'') + partial.replace(/^>/,'<span class="k">&gt;</span>'); }
+    mon.innerHTML = out + '<span class="c"></span>';
+  }
+  if(reduce){ render(lines.length,''); document.querySelectorAll('video[autoplay]').forEach(function(v){ v.removeAttribute('autoplay'); v.pause(); v.setAttribute('controls',''); }); }
+  else{
+    var li=0, ch=0;
+    (function step(){
+      if(li>=lines.length){ return; }
+      ch++;
+      render(li, lines[li].slice(0,ch));
+      if(ch>=lines[li].length){ li++; ch=0; setTimeout(step, 420); }
+      else setTimeout(step, 28);
+    })();
+  }
+
+  /* --- threshold: decides BLACK or WHITE, which is the page's theme --- */
+  var reading = 412, thr = document.getElementById('thr'), state = document.getElementById('thrState'), root = document.documentElement;
+  function apply(){
+    var t = +thr.value, black = reading < t;
+    root.setAttribute('data-floor', black ? 'black' : 'white');
+    state.innerHTML = 'floor reads <b>'+reading+'</b> · threshold <b>'+t+'</b> → <b>'+(black?'BLACK':'WHITE')+'</b> · '+(black?'on the line':'off the line');
+    try{ localStorage.setItem('thr', t); }catch(e){}
+  }
+  try{ var saved = localStorage.getItem('thr'); if(saved!==null){ thr.value = saved; } }catch(e){}
+  thr.addEventListener('input', apply); apply();
+
+  /* --- the line draws as you scroll; cards reveal; the robot searches at the gap --- */
+  var robot = document.getElementById('robot');
+  if('IntersectionObserver' in window){
+    /* reveals: generous — anything entering the lower 88% of the screen draws its line and fades in */
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('on'); });
+    },{rootMargin:'0px 0px -12% 0px', threshold:0.08});
+    document.querySelectorAll('.station, .reveal').forEach(function(el){ io.observe(el); });
+    /* the robot: reacts only to the station it is actually passing (a thin band at its own height, 44vh) */
+    var band = new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(!e.isIntersecting) return;
+        if(e.target.classList.contains('lost')){ robot.classList.add('searching'); robot.classList.remove('found'); }
+        else if(e.target.classList.contains('found')){ robot.classList.remove('searching'); robot.classList.add('found'); setTimeout(function(){robot.classList.remove('found');},900); }
+        else { robot.classList.remove('searching'); }
+      });
+    },{rootMargin:'-42% 0px -52% 0px', threshold:0});
+    document.querySelectorAll('.station').forEach(function(el){ band.observe(el); });
+  } else {
+    document.querySelectorAll('.station, .reveal').forEach(function(el){ el.classList.add('on'); });
+  }
+  /* --- scrolling up: the robot turns round (the 3D model and the picture both read this) --- */
+  (function(){ var ly = window.scrollY; window.addEventListener('scroll', function(){ var y = window.scrollY; if(y < ly - 2) robot.classList.add('up'); else if(y > ly + 2) robot.classList.remove('up'); ly = y; }, {passive:true}); })();
+  /* --- kinetic headline + count-up numbers --- */
+  var h1 = document.getElementById('h1'); if(h1){ setTimeout(function(){ h1.classList.add('on'); }, reduce ? 0 : 500); }
+  document.querySelectorAll('[data-count]').forEach(function(el){
+    var target = +el.getAttribute('data-count'), pre = el.getAttribute('data-prefix')||'', suf = el.getAttribute('data-suffix')||'';
+    if(reduce){ return; }
+    var done=false;
+    var o = new IntersectionObserver(function(es){ es.forEach(function(e){ if(!e.isIntersecting||done) return; done=true; var t0=performance.now(), d=900;
+      (function tick(now){ var k=Math.min(1,(now-t0)/d); k=1-Math.pow(1-k,3); el.textContent = pre + Math.round(target*k) + suf; if(k<1) requestAnimationFrame(tick); })(t0); }); },{threshold:0.5});
+    o.observe(el);
+  });
+})();
+</script>
+
+<!-- the 3D line tracker: a Blender model of my Korea 2021 robot, seen from above; loads only when WebGL works -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var holder = document.getElementById('robot'), img = document.getElementById('robotImg'), canvas = document.getElementById('robotGL');
+  if(!holder || !canvas || reduce || !window.THREE || !THREE.GLTFLoader) return;
+  var renderer;
+  try { renderer = new THREE.WebGLRenderer({canvas:canvas, alpha:true, antialias:true}); } catch(e){ return; }
+  var W = holder.clientWidth || 72, H = holder.clientHeight || 72;
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio||1)); renderer.setSize(W, H, false);
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  var scene = new THREE.Scene();
+  /* bird's-eye: an orthographic camera straight above the robot; the robot's front points down the page */
+  var cam = new THREE.OrthographicCamera(-0.6, 0.6, 1.27, -1.27, 0.1, 20);
+  cam.position.set(0.25, 6, 0); cam.up.set(-1, 0, 0); cam.lookAt(0.25, 0, 0);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x223344, 0.7));
+  var sun = new THREE.DirectionalLight(0xffffff, 0.6); sun.position.set(1.5, 4, 1); scene.add(sun);
+  var robot = null, led = null, wheels = [], yaw = 0, spinning = false, lastY = window.scrollY, wheelAngle = 0, pulse = 0;
+  /* the sniff: a real line tracing robot never drives straight. It swings its nose left-right across the tape,
+     reading black, white, black, and corrects. While the page scrolls the robot sweeps the same way. */
+  var speed = 0, sniffT = 0, pivot = new THREE.Group();
+  /* the turn-around: scroll up and the robot turns 180 degrees and drives back the way it came */
+  var head = new THREE.Group(), heading = 0, goal = 0;
+  /* line lost: the robot drives in circles, the way it searched on the competition map, until it reads black again */
+  var px = 0, py = 0, orbit = 0;   /* the whole picture turns (CSS), so the robot is never clipped by its frame */
+  new THREE.GLTFLoader().load('img/robot.json', function(g){
+    robot = g.scene;
+    robot.traverse(function(o){ if(o.isMesh){ if(/^status_led/.test(o.name)) led = o; if(/^wheel_[LR]$/.test(o.name)) wheels.push(o); } });
+    /* turn about the wheel axle (x = -0.05), like the real robot, so the sensor arm sweeps and the body barely moves */
+    head.position.set(0.25, 0, 0); pivot.position.set(-0.3, 0, 0); robot.position.set(0.05, 0, 0);
+    pivot.add(robot); head.add(pivot); scene.add(head);   /* head turns about the robot's middle, so it stays in frame */
+    img.style.display='none'; canvas.style.display='block'; draw();
+  }, undefined, function(){ /* keep the picture */ });
+  function draw(){ renderer.render(scene, cam); }
+  var raf = null;
+  function loop(){
+    raf = null; if(!robot) return;
+    var dy = window.scrollY - lastY; lastY = window.scrollY;
+    if(dy > 2) goal = 0; else if(dy < -2) goal = Math.PI;      /* down the page: nose down; up the page: nose up */
+    heading += (goal - heading) * 0.12; head.rotation.y = heading;
+    wheelAngle += Math.abs(dy) * 0.02;   /* after the turn it always drives forward */ wheels.forEach(function(w){ w.rotation.z = wheelAngle; });
+    speed = speed * 0.82 + Math.abs(dy) * 0.18;               /* smoothed scroll speed, px per frame */
+    var drive = Math.min(1, speed / 5);                        /* 0 = parked, 1 = full sweep */
+    sniffT += 0.18 + 0.22 * drive;                             /* the sweep gets quicker as you scroll faster */
+    var sniff = drive * (0.14 * Math.sin(sniffT) + 0.02 * Math.sin(sniffT * 6.3));   /* ±8° sweep plus a small shiver */
+    yaw += (sniff - yaw) * 0.3;
+    pivot.rotation.y = yaw;
+    if(spinning){ var wide = window.innerWidth >= 700, R = wide ? 70 : 40, v = R * 0.06, t = heading + orbit; orbit += wide ? -0.06 : 0.06; px += v * Math.sin(t); py += v * Math.cos(t); }   /* wide screens circle into the empty margin on the left; phones circle right, on screen */
+    else { px *= 0.85; py *= 0.85; orbit *= 0.85; if(Math.abs(px) + Math.abs(py) + Math.abs(orbit) < 0.3){ px = 0; py = 0; orbit = 0; } }
+    holder.style.translate = px.toFixed(1) + 'px ' + py.toFixed(1) + 'px';
+    holder.style.rotate = (-orbit).toFixed(3) + 'rad';
+    pivot.position.z = drive * 0.02 * Math.sin(sniffT * 6.3);  /* the vibration: a 2 cm lateral buzz */
+    pulse += 0.15; if(led && led.material){ led.material.emissiveIntensity = spinning ? 0.2 + 0.3*Math.sin(pulse*3) : 1.0 + 0.8*Math.sin(pulse); }
+    draw();
+    if(spinning || px !== 0 || py !== 0 || orbit !== 0 || speed > 0.05 || Math.abs(yaw) > 0.005 || Math.abs(goal - heading) > 0.005 || Math.abs(dy) > 0) raf = requestAnimationFrame(loop);
+  }
+  function kick(){ if(!raf) raf = requestAnimationFrame(loop); }
+  window.addEventListener('scroll', kick, {passive:true});
+  new MutationObserver(function(){ spinning = holder.classList.contains('searching'); if(!spinning){ orbit = Math.atan2(Math.sin(orbit), Math.cos(orbit)); } kick(); }).observe(holder, {attributes:true, attributeFilter:['class']});
+  window.addEventListener('resize', function(){ W = holder.clientWidth||72; H = holder.clientHeight||72; renderer.setSize(W,H,false); draw(); });
+})();
+</script>
+</body>
+</html>
