@@ -69,13 +69,11 @@
   #robot .eye{fill:var(--accent)}
   #robot .body{fill:var(--panel);stroke:var(--rail);stroke-width:2}
   #robot .wheel{fill:var(--rail)}
-  #robot.searching #robotImg{animation:spin 1.6s linear infinite}
   #robotImg{transition:transform .45s ease}
   #robot.up #robotImg{transform:rotate(0deg)!important}
   #robot.found{transform:scale(1.12)}
   #robot.found::after{content:"";position:absolute;left:50%;top:50%;width:96px;height:96px;margin:-48px 0 0 -48px;border-radius:50%;border:2px solid var(--accent);opacity:.9;animation:ring .9s ease-out forwards}
   @keyframes ring{to{transform:scale(1.6);opacity:0}}
-  @keyframes spin{to{transform:rotate(360deg)}}
 
   /* ---------- hero: the serial monitor ---------- */
   .hero{padding:36px 0 10px;position:relative}
@@ -147,7 +145,6 @@
   @media(prefers-reduced-motion:reduce){
     .reveal{opacity:1;transform:none;transition:none}
     .station::before{transform:none;transition:none}
-    #robot.searching{animation:none}
     .monitor .c{animation:none}
     html{scroll-behavior:auto}
   }
@@ -475,8 +472,56 @@
   } else {
     document.querySelectorAll('.station, .reveal').forEach(function(el){ el.classList.add('on'); });
   }
-  /* --- scrolling up: the robot turns round (the 3D model and the picture both read this) --- */
-  (function(){ var ly = window.scrollY; window.addEventListener('scroll', function(){ var y = window.scrollY; if(y < ly - 2) robot.classList.add('up'); else if(y > ly + 2) robot.classList.remove('up'); ly = y; }, {passive:true}); })();
+  /* --- the robot drives. The same moves for the 3D model and for the picture, so it works in every browser:
+         scroll down and it drives nose-down; scroll up and it turns round;
+         while it drives it sweeps its nose left and right across the line, the way a line tracing robot reads black, white, black;
+         where the line is lost it drives in circles until it reads black again --- */
+  (function(){
+    var calm = reduce;   /* reduced motion: a smaller, slower sweep and no circles */
+    var refY = window.scrollY, lastY = refY, lastT = 0, raf = null, H = robot.offsetHeight || 152;
+    var speed = 0, amp = 0, phase = 0, heading = 0, px = 0, py = 0, orbit = 0, wasLost = false;
+    function frame(now){
+      raf = null;
+      var dt = lastT ? Math.min(0.05, Math.max(0.001, (now - lastT) / 1000)) : 1/60; lastT = now;
+      var y = window.scrollY, dy = y - lastY; lastY = y;
+      if(y < refY - 6){ robot.classList.add('up'); refY = y; } else if(y > refY + 6){ robot.classList.remove('up'); refY = y; }
+      var up = robot.classList.contains('up'), lost = robot.classList.contains('searching');
+      if(wasLost && !lost){ orbit = Math.atan2(Math.sin(orbit), Math.cos(orbit)); }   /* line found: straighten up the short way */
+      wasLost = lost;
+      var goal = up ? Math.PI : 0;
+      heading += (goal - heading) * (1 - Math.exp(-dt / 0.14));
+      /* the sweep starts fast and settles in about a second, so even one turn of the mouse wheel shows a full left-right scan */
+      var v = Math.abs(dy) / dt;
+      speed = Math.min(400, speed + (v - speed) * (1 - Math.exp(-dt / (v > speed ? 0.08 : 0.35))));
+      var drive = Math.min(1, speed / 250);
+      amp += ((lost && !calm ? 0 : drive) - amp) * (1 - Math.exp(-dt / 0.12));
+      phase += 2 * Math.PI * (calm ? 0.8 : 1 + 0.4 * drive) * dt;   /* 1 to 1.4 sweeps a second */
+      var scan = calm ? amp * 0.12 * Math.sin(phase)                    /* ±7° */
+                      : amp * (0.28 * Math.sin(phase) + 0.015 * Math.sin(phase * 6.3));   /* ±16° plus a small shiver */
+      /* line lost: circles. Wide screens circle into the empty margin on the left; phones circle right, on screen */
+      if(lost && !calm){
+        var wide = window.innerWidth >= 700, R = wide ? 70 : 40, t = heading + orbit;
+        orbit += (wide ? -3.6 : 3.6) * dt; px += R * 3.6 * dt * Math.sin(t); py += R * 3.6 * dt * Math.cos(t);
+      } else {
+        var k = Math.exp(-dt / 0.1); px *= k; py *= k; orbit *= k;
+        if(Math.abs(px) + Math.abs(py) + Math.abs(orbit) < 0.3){ px = 0; py = 0; orbit = 0; }
+      }
+      /* turn the whole picture, so it is never clipped. The sweep turns about the wheel axle (12% of the robot's length
+         behind its middle), like the real robot: the sensor arm sweeps and the back barely moves */
+      var ax = -0.12 * H * Math.sin(heading), ay = -0.12 * H * Math.cos(heading);
+      var cs = Math.cos(scan), sn = Math.sin(scan), qx = ax - (cs * ax - sn * ay), qy = ay - (sn * ax + cs * ay);
+      var co = Math.cos(orbit), so = Math.sin(-orbit);
+      robot.style.translate = (px + co * qx - so * qy).toFixed(1) + 'px ' + (py + so * qx + co * qy).toFixed(1) + 'px';
+      robot.style.rotate = (scan - orbit).toFixed(4) + 'rad';
+      robot._heading = heading;
+      if(robot._draw3d){ robot._draw3d(heading, dy, lost, now); }
+      if((lost && !calm) || px || py || orbit || speed > 2 || Math.abs(goal - heading) > 0.003){ raf = requestAnimationFrame(frame); }
+    }
+    robot._kick = function(){ if(!raf){ raf = requestAnimationFrame(frame); } };
+    window.addEventListener('scroll', robot._kick, {passive:true});
+    window.addEventListener('resize', function(){ H = robot.offsetHeight || 152; robot._kick(); });
+    new MutationObserver(robot._kick).observe(robot, {attributes:true, attributeFilter:['class']});
+  })();
   /* --- kinetic headline + count-up numbers --- */
   var h1 = document.getElementById('h1'); if(h1){ setTimeout(function(){ h1.classList.add('on'); }, reduce ? 0 : 500); }
   document.querySelectorAll('[data-count]').forEach(function(el){
@@ -495,12 +540,12 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
 (function(){
-  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var holder = document.getElementById('robot'), img = document.getElementById('robotImg'), canvas = document.getElementById('robotGL');
-  if(!holder || !canvas || reduce || !window.THREE || !THREE.GLTFLoader) return;
+  if(!holder || !canvas || !window.THREE || !THREE.GLTFLoader) return;   /* no 3D: the picture keeps doing the same moves */
   var renderer;
   try { renderer = new THREE.WebGLRenderer({canvas:canvas, alpha:true, antialias:true}); } catch(e){ return; }
-  var W = holder.clientWidth || 72, H = holder.clientHeight || 72;
+  var W = holder.clientWidth || 72, H = holder.clientHeight || 152;
   renderer.setPixelRatio(Math.min(2, window.devicePixelRatio||1)); renderer.setSize(W, H, false);
   renderer.outputEncoding = THREE.sRGBEncoding;
   var scene = new THREE.Scene();
@@ -509,49 +554,27 @@
   cam.position.set(0.25, 6, 0); cam.up.set(-1, 0, 0); cam.lookAt(0.25, 0, 0);
   scene.add(new THREE.HemisphereLight(0xffffff, 0x223344, 0.7));
   var sun = new THREE.DirectionalLight(0xffffff, 0.6); sun.position.set(1.5, 4, 1); scene.add(sun);
-  var robot = null, led = null, wheels = [], yaw = 0, spinning = false, lastY = window.scrollY, wheelAngle = 0, pulse = 0;
-  /* the sniff: a real line tracing robot never drives straight. It swings its nose left-right across the tape,
-     reading black, white, black, and corrects. While the page scrolls the robot sweeps the same way. */
-  var speed = 0, sniffT = 0, pivot = new THREE.Group();
-  /* the turn-around: scroll up and the robot turns 180 degrees and drives back the way it came */
-  var head = new THREE.Group(), heading = 0, goal = 0;
-  /* line lost: the robot drives in circles, the way it searched on the competition map, until it reads black again */
-  var px = 0, py = 0, orbit = 0;   /* the whole picture turns (CSS), so the robot is never clipped by its frame */
+  /* the left-right sweep and the circles turn the whole picture (the page script above does that for the 3D model and the
+     picture alike), so here the model only turns round when you scroll up, spins its wheels and blinks its light */
+  var head = new THREE.Group(), led = null, wheels = [], wheelAngle = 0;
   new THREE.GLTFLoader().load('img/robot.json', function(g){
-    robot = g.scene;
-    robot.traverse(function(o){ if(o.isMesh){ if(/^status_led/.test(o.name)) led = o; if(/^wheel_[LR]$/.test(o.name)) wheels.push(o); } });
-    /* turn about the wheel axle (x = -0.05), like the real robot, so the sensor arm sweeps and the body barely moves */
-    head.position.set(0.25, 0, 0); pivot.position.set(-0.3, 0, 0); robot.position.set(0.05, 0, 0);
-    pivot.add(robot); head.add(pivot); scene.add(head);   /* head turns about the robot's middle, so it stays in frame */
-    img.style.display='none'; canvas.style.display='block'; draw();
+    var model = g.scene;
+    model.traverse(function(o){ if(o.isMesh){ if(/^status_led/.test(o.name)) led = o; if(/^wheel_[LR]$/.test(o.name)) wheels.push(o); } });
+    head.position.set(0.25, 0, 0); model.position.set(-0.25, 0, 0);
+    head.add(model); scene.add(head);   /* head turns about the robot's middle, so it stays in frame */
+    holder._draw3d = function(heading, dy, lost, now){
+      head.rotation.y = heading;
+      wheelAngle += Math.abs(dy) * 0.02; wheels.forEach(function(w){ w.rotation.z = wheelAngle; });
+      if(led && led.material){ var s = now / 1000; led.material.emissiveIntensity = (lost && !calm) ? 0.2 + 0.3 * Math.sin(s * 27) : 1.0 + 0.8 * Math.sin(s * 9); }
+      renderer.render(scene, cam);
+    };
+    img.style.display = 'none'; canvas.style.display = 'block';
+    holder._draw3d(holder._heading || 0, 0, false, performance.now());
   }, undefined, function(){ /* keep the picture */ });
-  function draw(){ renderer.render(scene, cam); }
-  var raf = null;
-  function loop(){
-    raf = null; if(!robot) return;
-    var dy = window.scrollY - lastY; lastY = window.scrollY;
-    if(dy > 2) goal = 0; else if(dy < -2) goal = Math.PI;      /* down the page: nose down; up the page: nose up */
-    heading += (goal - heading) * 0.12; head.rotation.y = heading;
-    wheelAngle += Math.abs(dy) * 0.02;   /* after the turn it always drives forward */ wheels.forEach(function(w){ w.rotation.z = wheelAngle; });
-    speed = speed * 0.82 + Math.abs(dy) * 0.18;               /* smoothed scroll speed, px per frame */
-    var drive = Math.min(1, speed / 5);                        /* 0 = parked, 1 = full sweep */
-    sniffT += 0.18 + 0.22 * drive;                             /* the sweep gets quicker as you scroll faster */
-    var sniff = drive * (0.14 * Math.sin(sniffT) + 0.02 * Math.sin(sniffT * 6.3));   /* ±8° sweep plus a small shiver */
-    yaw += (sniff - yaw) * 0.3;
-    pivot.rotation.y = yaw;
-    if(spinning){ var wide = window.innerWidth >= 700, R = wide ? 70 : 40, v = R * 0.06, t = heading + orbit; orbit += wide ? -0.06 : 0.06; px += v * Math.sin(t); py += v * Math.cos(t); }   /* wide screens circle into the empty margin on the left; phones circle right, on screen */
-    else { px *= 0.85; py *= 0.85; orbit *= 0.85; if(Math.abs(px) + Math.abs(py) + Math.abs(orbit) < 0.3){ px = 0; py = 0; orbit = 0; } }
-    holder.style.translate = px.toFixed(1) + 'px ' + py.toFixed(1) + 'px';
-    holder.style.rotate = (-orbit).toFixed(3) + 'rad';
-    pivot.position.z = drive * 0.02 * Math.sin(sniffT * 6.3);  /* the vibration: a 2 cm lateral buzz */
-    pulse += 0.15; if(led && led.material){ led.material.emissiveIntensity = spinning ? 0.2 + 0.3*Math.sin(pulse*3) : 1.0 + 0.8*Math.sin(pulse); }
-    draw();
-    if(spinning || px !== 0 || py !== 0 || orbit !== 0 || speed > 0.05 || Math.abs(yaw) > 0.005 || Math.abs(goal - heading) > 0.005 || Math.abs(dy) > 0) raf = requestAnimationFrame(loop);
-  }
-  function kick(){ if(!raf) raf = requestAnimationFrame(loop); }
-  window.addEventListener('scroll', kick, {passive:true});
-  new MutationObserver(function(){ spinning = holder.classList.contains('searching'); if(!spinning){ orbit = Math.atan2(Math.sin(orbit), Math.cos(orbit)); } kick(); }).observe(holder, {attributes:true, attributeFilter:['class']});
-  window.addEventListener('resize', function(){ W = holder.clientWidth||72; H = holder.clientHeight||72; renderer.setSize(W,H,false); draw(); });
+  window.addEventListener('resize', function(){
+    W = holder.clientWidth || 72; H = holder.clientHeight || 152; renderer.setSize(W, H, false);
+    if(holder._draw3d){ holder._draw3d(holder._heading || 0, 0, holder.classList.contains('searching'), performance.now()); }
+  });
 })();
 </script>
 </body>
