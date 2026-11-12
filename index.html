@@ -95,6 +95,10 @@
   .num{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
   .num b{display:block;font-size:2rem;line-height:1.1;color:var(--accent);font-family:var(--display)}
   .num span{display:block;font-size:.92rem;color:var(--muted);margin-top:4px}
+  a.num{display:block;color:inherit;text-decoration:none;transition:opacity .6s,transform .6s,border-color .2s,background-color .2s}
+  a.num:hover,a.num:focus-visible{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,var(--panel))}
+  .num .go{display:block;margin-top:10px;font-family:var(--mono);font-size:.8rem;letter-spacing:.03em;color:var(--accent)}
+  .station{scroll-margin-top:28px}
   .buttons{display:flex;flex-wrap:wrap;gap:10px;margin:4px 0 8px}
   .btn{display:inline-block;padding:10px 16px;border-radius:8px;border:1px solid var(--accent);text-decoration:none;font-weight:600;color:var(--accent)}
   .btn svg{width:18px;height:18px;vertical-align:-4px;margin-right:8px}
@@ -143,7 +147,7 @@
   .skip:focus{left:20px;top:8px;background:var(--accent);color:var(--accent-ink);padding:6px 10px;border-radius:6px}
 
   @media(prefers-reduced-motion:reduce){
-    .reveal{opacity:1;transform:none;transition:none}
+    .reveal,a.num{opacity:1;transform:none;transition:none}
     .station::before{transform:none;transition:none}
     .monitor .c{animation:none}
     html{scroll-behavior:auto}
@@ -170,12 +174,12 @@
   <div class="mono muted" style="font-size:.9rem;letter-spacing:.06em;text-transform:uppercase">Felipe Vicente · Madrid</div>
   <h1 id="h1" aria-label="Find the line"><span class="w">Find</span> <span class="w">the</span> <span class="w acc">line.</span></h1>
   <p class="lede">I build the things I can't stop thinking about, and I test them until they tell me the truth.</p>
-  <p class="sub">Senior @ Aquinas American School · founder of Highlit · research intern on self‑driving‑car perception, Taiwan, summer 2026 · president of my school's Robotics STEM Club and Asian Culture Club</p>
+  <p class="sub">Senior @ Aquinas American School · founder of Highlit · research intern on self‑driving‑car prediction, Taiwan, summer 2026 · president of my school's Robotics STEM Club and Asian Culture Club</p>
 
   <div class="numbers">
-    <div class="num reveal"><b data-count="3" data-suffix="×">3×</b><span>first place in robotics competitions: Japan 2020, Korea 2021, Australia 2023</span></div>
-    <div class="num reveal"><b>Highlit</b><span>Where I'm taking it: a LinkedIn for sports recruiting. A profile with your highlights that a coach can just open, on top of the automated outreach and planning it does today. Recruiting is going personal and direct; I want it to be the tool every athlete uses for that.</span></div>
-    <div class="num reveal"><b>Liquid fly</b><span>Beyond research: liquid neurons in a real fly brain, and no programmed behaviour. We set the world and the test; the brain adapts and evolves on its own. Then measure the physical changes, copy them into other flies, and move on to other animals. Three of five steps done.</span></div>
+    <a class="num reveal" href="#link2"><b>Highlit</b><span>Live pre‑release. Where I'm taking it: a LinkedIn for sports recruiting.</span><small class="go">See Highlit ↓</small></a>
+    <a class="num reveal" href="#link3"><b>Liquid fly</b><span>Beyond research: liquid neurons in a real fly brain, and no programmed behaviour. Three of five steps done, in simulation.</span><small class="go">See the research ↓</small></a>
+    <a class="num reveal" href="#wins"><b data-count="3" data-suffix="×">3×</b><span>first place in robotics competitions: Japan 2020, Korea 2021, Australia 2023</span><small class="go">See the robots ↓</small></a>
   </div>
 
   <div class="threshold">
@@ -271,6 +275,7 @@
   <div class="card reveal" id="highlit">
     <div class="kicker">Since late July 2026 · 872 commits · live pre‑release</div>
     <p class="one">I'm a student‑athlete myself, and I was in the position where getting a college coach's attention felt impossible. So I built an app that sends emails to every college coach in the country, from the athlete's own Gmail. Watching my peers go through the same trouble, I saw a reason and a path to turn it into a business and change recruiting for athletes: I know first‑hand how much pressure and time it takes, for the athletes and for their parents.</p>
+    <p>Where I'm taking it: a LinkedIn for sports recruiting. A profile with your highlights that a coach can just open, on top of the automated outreach and planning it does today. Recruiting is going personal and direct; I want it to be the tool every athlete uses for that.</p>
     <figure><img src="img/highlit-find.jpg" alt="Find schools, Night theme: every men's basketball program grouped by how players get in, walk-on friendly first, no ranking by how good you are; invented athlete" loading="lazy" width="1400" height="900"><figcaption>Find schools, on an invented athlete: 962 programs never ranked by how good you are.</figcaption></figure>
     <figure><img src="img/highlit-write.jpg" alt="The Write screen: an email to an invented college with the athlete's own line highlighted and an Approved stamp" loading="lazy" width="1400" height="651"><figcaption>Write, on invented data: the athlete's own line.</figcaption></figure>
     <div class="role">Role: founder.</div>
@@ -289,6 +294,7 @@
     <p class="one">On 13 September I saw a video of a simulated fruit fly playing with a Rubik's cube, and I couldn't stop reading. Scientists have mapped every one of a fruit fly's 138,639 brain cells and how they connect, so a computer can run a copy of that brain. I started training one myself, but after countless tries I was just a controller telling the fly what to do. It never got better on its own.</p>
     <p>Then, instead of telling the fly what to do, I let evolution change it: 78 slightly different flies faced a predator over 15 generations, and the ones that did best passed on their changes.</p>
     <p>Evolution found 12 such changes. With them, the fly started escaping the predator on its own. Part of the change also worked when I copied it into a second fly's brain.</p>
+    <p>Beyond research: liquid neurons in a real fly brain, and no programmed behaviour. We set the world and the test; the brain adapts and evolves on its own. Then measure the physical changes, copy them into other flies, and move on to other animals. Three of five steps done, in simulation.</p>
     <figure><video src="img/fly-escape.mp4" poster="img/fly-escape-poster.jpg" muted controls playsinline preload="metadata" aria-label="Same fly, same attack, three brains: only the evolved brain gets the danger signal to its escape cell, and the fly jumps away"></video><figcaption>Same fly, same attack, three brains. Only the evolved brain gets the danger signal to its escape cell, and the fly jumps away.</figcaption></figure>
     <figure><img src="img/fly-brain-change.jpg" alt="Left: the 12 changes evolution made. Right: copied into another fly's brain, the changes woke up its danger-detecting cells (13); the same changes on the wrong cells did nothing (0)" loading="lazy" width="1400" height="760"><figcaption>Left: the 12 changes evolution made. Right: copied into another fly's brain, the changes woke up its danger‑detecting cells.</figcaption></figure>
     <figure><img src="img/fly-brain-map.jpg" alt="All 138,639 FlyWire neurons at their real positions, front and top view, coloured by how active each was" loading="lazy" width="1400" height="612"><figcaption>All 138,639 neurons of the fly brain at their real positions, coloured by how active each one was, in simulation.</figcaption></figure>
@@ -352,7 +358,7 @@
     <div class="kicker">Since Jan 2026 · shipped · 7 public releases</div>
     <h3>Shelter Inventory Manager</h3>
     <p class="one">It started in January 2026 as the internal assessment for my IB Computer Science course. I consulted a charity in Taiwan for feedback and saw it could help real food banks, charities and small businesses. So I polished it, made it free, and emailed about 3,000 charities and businesses to offer it.</p>
-    <figure><img src="img/shelter-main.png" alt="The dashboard with stock levels, items running low and a category summary, on demo data" loading="lazy"><figcaption>The dashboard a volunteer sees on opening the app.</figcaption></figure>
+    <figure><img src="img/shelter-main.png" alt="The dashboard with stock levels, items running low and a category summary, on demo data" loading="lazy"><figcaption>The dashboard a volunteer sees on opening the app, on demo data.</figcaption></figure>
     <ul class="facts"><li>21 downloads</li></ul>
     <div class="role">Role: creator.</div>
     <p><a href="https://felipevicente0227-hash.github.io/shelter-inventory/">Try it in your browser →</a> &nbsp;·&nbsp; <a href="https://github.com/felipevicente0227-hash/shelter-inventory">Code and releases →</a></p>
